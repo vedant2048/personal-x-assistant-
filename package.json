@@ -1,0 +1,7 @@
+{
+  "name": "personal-x-ai-assistant-proxy",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node proxy.js" },
+  "dependencies": { "dotenv": "^16.6.1" }
+}

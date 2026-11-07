@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="popup.css"><title>Personal X AI Assistant</title></head><body>
+<header><span class="mark">✦</span><div><h1>Personal X AI</h1><p id="status">Loading session…</p></div></header>
+
+<section id="timer-box" class="timer-box">
+  <div id="timer-icon" class="timer-icon">⏱️</div>
+  <div class="timer-details">
+    <div id="timer-label" class="timer-label">NEXT ACTION IN</div>
+    <div id="countdown" class="timer-value">--:--</div>
+  </div>
+</section>
+
+<label class="toggle-card">
+  <div class="toggle-info">
+    <span>💤 30m Run / 5m Sleep</span>
+    <small>Pauses 5 mins after every 30 mins active</small>
+  </div>
+  <div class="switch">
+    <input id="sleep-toggle" type="checkbox">
+    <span class="slider"></span>
+  </div>
+</label>
+
+<section class="controls"><button id="start">Start</button><button id="pause" class="quiet">Pause</button><button id="stop" class="danger">Stop</button></section>
+
+<section>
+  <div class="metrics-header">
+    <div class="section-title" style="margin:0">Session Metrics</div>
+    <button id="reset-btn" class="mini-btn" title="Reset all counters and clear history">↺ Reset Counters</button>
+  </div>
+  <div class="metrics"><div><b id="seen">0</b><span>Seen</span></div><div><b id="liked">0</b><span>Liked</span></div><div><b id="submitted">0</b><span>Replied</span></div><div><b id="failed">0</b><span>Issues</span></div></div>
+</section>
+
+<section><div class="section-title">Latest Activity</div><article id="current" class="card muted">No replies yet.</article></section>
+<section><div class="section-title">Recent history</div><div id="history"></div></section>
+<details><summary>Settings</summary><label>AI Provider<select id="provider"><option value="gemini">Google Gemini (Recommended / Free)</option><option value="openrouter">OpenRouter</option><option value="groq">Groq (Free & Fast)</option></select></label><label>Model<input id="model" value="gemini-3.5-flash-lite"></label><label>Local proxy URL<input id="proxy-url" value="http://localhost:8787"></label><div class="row"><label>Min secs (1m = 60)<input id="min" type="number" min="30" max="300"></label><label>Max secs (3m = 180)<input id="max" type="number" min="30" max="300"></label></div><button id="save" class="quiet">Save settings</button></details>
+<p id="notice" role="status"></p><script src="popup.js"></script></body></html>
