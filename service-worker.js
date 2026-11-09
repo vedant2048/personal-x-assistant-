@@ -187,6 +187,21 @@ async function processPost(post, force = false) {
   if (existing && !force) { runtime.lastError = 'Duplicate post ID skipped.'; return; }
   const base = { ...existing, ...post, timestamp: Date.now(), status: 'classifying', error: null };
   await dbPut(base); sendUpdate();
+
+  // Skip image or video posts immediately without calling AI or liking
+  if (post.hasMedia) {
+    base.status = 'irrelevant';
+    base.classification = {
+      decision: 'SKIP',
+      action: 'SKIP',
+      post_type: 'MEDIA_POST',
+      reason: 'Skipped: Contains image or video'
+    };
+    await dbPut(base);
+    sendUpdate();
+    return;
+  }
+
   try {
     // Classification (cached per post)
     const classification = base.classification || cleanJson(await requestAi('classification',
@@ -210,32 +225,30 @@ async function processPost(post, force = false) {
     let rawReply;
     if (classification.action === 'GENERATE_HUMOROUS_REPLY') {
       rawReply = await requestAi('humorous_reply',
-        `Write a witty, dry, relatable developer reply to this funny coding meme following these exact rules:
-- Length: strictly 5 to 20 words.
-- Tone: witty, dry, relatable developer humor.
-- Style: lowercase where natural, casual.
-- Zero emojis. Do not include any emoji.
-- No corporate speak or fake laughter (no "lol", "haha", "so true").
-- No exclamation marks.
-- Add a dry punchline or relatable developer observation.
+        `Write a short, simple, dry developer reply to this tech post:
+- Length: strictly 5 to 12 words. Keep it short, not too much.
+- Language: very simple everyday words that anyone can easily understand.
+- Think like a human: casual, dry developer humor.
+- Style: lowercase where natural.
+- Zero emojis. No exclamation marks.
+- No fake laughter (no "lol", "haha", "so true").
+- Add a quick, relatable developer punchline or observation.
 - Output ONLY the reply text directly.
 
-Meme/Post:
+Post:
 "${post.text}"`);
     } else {
       rawReply = await requestAi('reply',
-        `Write a reply to this tech post following these exact rules:
-- Length: strictly 5 to 20 words.
-- Tone: sound like a real software developer casually participating in a discussion.
-- Style: lowercase where natural. Calm and thoughtful.
-- Zero emojis. Do not include any emoji.
-- No corporate language or buzzwords.
-- No excessive enthusiasm. Never use exclamation marks.
-- No generic compliments or flattery (e.g. don't say "great point", "nice work").
-- No forced questions at the end.
-- No fake personal experiences.
-- Never invent facts.
-- Add an actual thought or technical perspective.
+        `Write a short, simple reply to this tech post:
+- Length: strictly 5 to 12 words. Keep it short, not too much.
+- Language: simple, plain words. Easy to understand. Avoid fancy or complex words.
+- Think like a human: sound like a real person casually typing a thought on their phone.
+- No lecturing, explaining, or summarizing what the post says.
+- Style: lowercase where natural. Calm and grounded.
+- Zero emojis. Never use emojis.
+- Zero exclamation marks.
+- No corporate buzzwords, flattery, or compliments.
+- No questions at the end.
 - Output ONLY the reply text directly.
 
 Post:

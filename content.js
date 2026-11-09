@@ -49,12 +49,19 @@ function isSupportedPage() {
 }
 
 // === Tweet Extraction ===
+function hasMediaInArticle(article) {
+  const hasPhoto = !!article.querySelector('[data-testid="tweetPhoto"], img[src*="pbs.twimg.com/media/"]');
+  const hasVideo = !!article.querySelector('[data-testid="videoPlayer"], [data-testid="videoComponent"], video, [data-testid="tweetVideo"], [data-testid="playButton"], div[aria-label*="video" i], div[aria-label*="gif" i], div[aria-label*="Embedded video" i]');
+  return hasPhoto || hasVideo;
+}
+
 function postFromArticle(article) {
   const link = [...article.querySelectorAll('a[href*="/status/"]')].find(a => /\/status\/\d+/.test(a.getAttribute('href') || ''));
   const id = link?.getAttribute('href')?.match(/\/status\/(\d+)/)?.[1];
   const text = article.querySelector('[data-testid="tweetText"]')?.innerText?.trim();
   if (!id || !text) return null;
-  return { id, text, url: new URL(link.href, location.origin).href, author: article.querySelector('[data-testid="User-Name"]')?.innerText?.split('\n')[0] || '', tabId: undefined };
+  const hasMedia = hasMediaInArticle(article);
+  return { id, text, url: new URL(link.href, location.origin).href, author: article.querySelector('[data-testid="User-Name"]')?.innerText?.split('\n')[0] || '', tabId: undefined, hasMedia };
 }
 
 function elementIsVisible(element) {
