@@ -43,7 +43,8 @@ async function refresh() {
   }
 
   $('history').innerHTML = posts.slice(0, 6).map(p => {
-    const postType = p.classification?.post_type ? p.classification.post_type.replace(/_/g, ' ').toLowerCase() : '';
+    let postType = p.classification?.post_type ? p.classification.post_type.replace(/_/g, ' ').toLowerCase() : '';
+    if (p.classification?.post_type === 'MEDIA_POST') postType = 'photo/video - skipped';
     const badge = postType ? ` <span style="font-size:10px;font-weight:normal;color:#96a2b4;">(${escapeHtml(postType)})</span>` : '';
     return `<div class="history-item"><b>${escapeHtml(p.status.replace('_', ' '))}${badge}</b><p>${escapeHtml(p.draft || p.text || p.error || '')}</p></div>`;
   }).join('') || '<p>No posts processed yet.</p>';

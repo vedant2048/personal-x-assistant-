@@ -181,6 +181,16 @@ async function autoSubmitDraft(postId) {
 //  Core Processing
 // ---------------------------------------------------------------------------
 
+function isMediaPost(post) {
+  if (!post) return false;
+  if (post.hasMedia) return true;
+  const text = post.text || '';
+  if (/pic\.(?:twitter|x)\.com/i.test(text)) return true;
+  if (/\bpic\.x\b/i.test(text)) return true;
+  if (/\b(photo|video)\/\d+/i.test(post.url || '')) return true;
+  return false;
+}
+
 async function processPost(post, force = false) {
   if (!post?.id || !post.text?.trim()) throw new Error('Empty post or unsupported X layout.');
   const existing = await dbGet(post.id);
@@ -188,14 +198,14 @@ async function processPost(post, force = false) {
   const base = { ...existing, ...post, timestamp: Date.now(), status: 'classifying', error: null };
   await dbPut(base); sendUpdate();
 
-  // Skip image or video posts immediately without calling AI or liking
-  if (post.hasMedia) {
+  // Skip image, video, or pic.x posts immediately without calling AI, liking, or replying
+  if (isMediaPost(post)) {
     base.status = 'irrelevant';
     base.classification = {
       decision: 'SKIP',
       action: 'SKIP',
       post_type: 'MEDIA_POST',
-      reason: 'Skipped: Contains image or video'
+      reason: 'Skipped: Contains image, video, or pic.x media link'
     };
     await dbPut(base);
     sendUpdate();

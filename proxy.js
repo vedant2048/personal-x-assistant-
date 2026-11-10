@@ -62,7 +62,7 @@ Map each post to its exact post_type and required action:
    - action: "GENERATE_HUMOROUS_REPLY"
    - decision: "ENGAGE"
 
-4. Image, video, or screenshot post
+4. Image, video, screenshot, or media post (including posts containing pic.x, pic.twitter.com, or attached media links)
    - post_type: "MEDIA_POST"
    - action: "SKIP"
    - decision: "SKIP"
@@ -125,7 +125,7 @@ Classify a post as NOT RELEVANT (action SKIP) when:
 - It is personal lifestyle content unrelated to technology.
 - It is spam, engagement bait or repetitive promotion.
 - It is a giveaway or advertisement without meaningful discussion.
-- It is an image, video, GIF, or screenshot post, or relies on media without self-contained text.
+- It contains pic.x, pic.twitter.com, or is an image, video, GIF, or screenshot post, or relies on media without self-contained text.
 - It only mentions a technology keyword without actually discussing technology.
 - It contains no meaningful context or is too vague to understand.
 
@@ -135,7 +135,7 @@ Classify a post as NOT RELEVANT (action SKIP) when:
 - A post about building a business can be relevant even without technical keywords if it discusses SaaS or startup development.
 - A developer discussing burnout can be relevant if the discussion is specifically about software engineering.
 - A job advertisement is relevant only when it concerns technology or developer careers.
-- A meme should not be rejected just because it has little technical detail — mark it as FUNNY_CODING_MEME with action GENERATE_HUMOROUS_REPLY.
+- A pure text meme should not be rejected — mark it as FUNNY_CODING_MEME with action GENERATE_HUMOROUS_REPLY. BUT any meme containing an image, screenshot, video, or pic.x link MUST be classified as MEDIA_POST with action SKIP.
 - A post criticizing AI or a programming language is still relevant.
 - Negative opinions about technology are not grounds for rejection.
 

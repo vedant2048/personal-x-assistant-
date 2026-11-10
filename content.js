@@ -49,10 +49,29 @@ function isSupportedPage() {
 }
 
 // === Tweet Extraction ===
-function hasMediaInArticle(article) {
-  const hasPhoto = !!article.querySelector('[data-testid="tweetPhoto"], img[src*="pbs.twimg.com/media/"]');
-  const hasVideo = !!article.querySelector('[data-testid="videoPlayer"], [data-testid="videoComponent"], video, [data-testid="tweetVideo"], [data-testid="playButton"], div[aria-label*="video" i], div[aria-label*="gif" i], div[aria-label*="Embedded video" i]');
-  return hasPhoto || hasVideo;
+function hasMediaInArticle(article, text = '') {
+  // Check text content for pic.x or pic.twitter links
+  if (/pic\.(?:twitter|x)\.com/i.test(text) || /\bpic\.x\b/i.test(text)) {
+    return true;
+  }
+
+  // Check link targets inside the tweet article
+  const hasMediaLink = !!article.querySelector('a[href*="/photo/"], a[href*="/video/"], a[href*="pic.twitter.com"], a[href*="pic.x.com"]');
+  if (hasMediaLink) return true;
+
+  // Check photo containers & images
+  const hasPhoto = !!article.querySelector(
+    '[data-testid="tweetPhoto"], img[src*="pbs.twimg.com/media/"], div[aria-label*="Image" i], div[aria-label*="Photo" i]'
+  );
+  if (hasPhoto) return true;
+
+  // Check video/GIF players
+  const hasVideo = !!article.querySelector(
+    '[data-testid="videoPlayer"], [data-testid="videoComponent"], video, [data-testid="tweetVideo"], [data-testid="playButton"], div[aria-label*="video" i], div[aria-label*="gif" i], div[aria-label*="Embedded video" i], div[aria-label*="Embedded media" i]'
+  );
+  if (hasVideo) return true;
+
+  return false;
 }
 
 function postFromArticle(article) {
@@ -60,7 +79,7 @@ function postFromArticle(article) {
   const id = link?.getAttribute('href')?.match(/\/status\/(\d+)/)?.[1];
   const text = article.querySelector('[data-testid="tweetText"]')?.innerText?.trim();
   if (!id || !text) return null;
-  const hasMedia = hasMediaInArticle(article);
+  const hasMedia = hasMediaInArticle(article, text);
   return { id, text, url: new URL(link.href, location.origin).href, author: article.querySelector('[data-testid="User-Name"]')?.innerText?.split('\n')[0] || '', tabId: undefined, hasMedia };
 }
 
