@@ -469,6 +469,13 @@ async function likePost(postId) {
 
 // === Message Handlers ===
 chrome.runtime.onMessage.addListener((message, _, respond) => {
+  if (message.type === 'REFRESH_FEED') {
+    try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) {}
+    window.location.reload();
+    respond({ ok: true });
+    return;
+  }
+
   if (message.type === 'STATE_UPDATE') {
     syncWidgetState(message.runtime);
     respond({ ok: true });

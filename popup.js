@@ -19,6 +19,12 @@ async function refresh() {
   });
 
   if ($('sleep-toggle')) $('sleep-toggle').checked = settings.sleepCycleEnabled !== false;
+  if ($('refresh-cycle-toggle')) $('refresh-cycle-toggle').checked = settings.refreshCycleEnabled !== false;
+  if ($('refresh-cycle-status')) {
+    const count = runtime.repliesSinceRefresh || 0;
+    const max = settings.refreshReplyThreshold || 20;
+    $('refresh-cycle-status').textContent = `Progress: ${count} / ${max} replies`;
+  }
 
   updateCountdownUI();
 
@@ -73,6 +79,12 @@ if ($('reset-btn')) {
 if ($('sleep-toggle')) {
   $('sleep-toggle').onchange = () => {
     action({ type: 'TOGGLE_SLEEP_CYCLE', enabled: $('sleep-toggle').checked });
+  };
+}
+
+if ($('refresh-cycle-toggle')) {
+  $('refresh-cycle-toggle').onchange = () => {
+    action({ type: 'TOGGLE_REFRESH_CYCLE', enabled: $('refresh-cycle-toggle').checked });
   };
 }
 

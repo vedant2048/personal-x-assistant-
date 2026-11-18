@@ -1,12 +1,15 @@
 const DEFAULT_SETTINGS = {
   provider: 'gemini', model: 'gemini-3.5-flash-lite', proxyUrl: 'http://localhost:8787',
   minIntervalSeconds: 60, maxIntervalSeconds: 180, timeoutMs: 45000,
-  sleepCycleEnabled: true
+  sleepCycleEnabled: true,
+  refreshCycleEnabled: true,
+  refreshReplyThreshold: 20
 };
 const runtime = {
   state: 'stopped', queue: [], processing: false, nextAt: 0,
   currentId: null, lastError: null, pendingSubmitId: null,
-  sessionStartTime: 0, sleepUntil: 0
+  sessionStartTime: 0, sleepUntil: 0,
+  repliesSinceRefresh: 0
 };
 const DB_NAME = 'personal-x-ai-assistant';
 
@@ -32,7 +35,8 @@ async function persistRuntime() {
     runtime: {
       state: runtime.state, nextAt: runtime.nextAt, currentId: runtime.currentId,
       lastError: runtime.lastError, pendingSubmitId: runtime.pendingSubmitId,
-      sessionStartTime: runtime.sessionStartTime, sleepUntil: runtime.sleepUntil
+      sessionStartTime: runtime.sessionStartTime, sleepUntil: runtime.sleepUntil,
+      repliesSinceRefresh: runtime.repliesSinceRefresh
     }
   });
 }
@@ -338,8 +342,40 @@ async function tick() {
     const submitId = runtime.pendingSubmitId;
     runtime.pendingSubmitId = null;
     runtime.nextAt = 0;
-    await autoSubmitDraft(submitId);
+    const submitted = await autoSubmitDraft(submitId);
     runtime.currentId = submitId;
+
+    if (submitted) {
+      runtime.repliesSinceRefresh = (runtime.repliesSinceRefresh || 0) + 1;
+    }
+
+    const threshold = Number(cfg.refreshReplyThreshold || 20);
+    // Check if 20-reply refresh cycle is enabled and threshold has been reached
+    if (submitted && cfg.refreshCycleEnabled && runtime.repliesSinceRefresh >= threshold) {
+      runtime.repliesSinceRefresh = 0;
+      runtime.queue = [];
+      await persistRuntime(); sendUpdate();
+
+      // Pause 4 seconds to let the 20th tweet finalize on X servers before refreshing
+      await new Promise(r => setTimeout(r, 4000));
+
+      const tabId = await getXTabId();
+      if (tabId) {
+        try {
+          await chrome.tabs.sendMessage(tabId, { type: 'REFRESH_FEED' });
+        } catch {
+          await chrome.tabs.reload(tabId);
+        }
+      }
+
+      // Wait 4 seconds for fresh page to load
+      await new Promise(r => setTimeout(r, 4000));
+      runtime.processing = false;
+      await persistRuntime(); sendUpdate();
+      setTimeout(() => tick(), 2500);
+      return;
+    }
+
     await persistRuntime(); sendUpdate();
     // After submitting, scroll to load more tweets
     await scrollForMorePosts();
@@ -444,6 +480,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       runtime.nextAt = 0;
       runtime.sessionStartTime = Date.now();
       runtime.sleepUntil = 0;
+      runtime.repliesSinceRefresh = 0;
       runtime.lastError = null;
       await persistRuntime();
       sendUpdate();
@@ -459,6 +496,15 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
         runtime.nextAt = 0;
         chrome.alarms.clear('sleep-timer');
       }
+      await persistRuntime();
+      sendUpdate();
+      respond({ ok: true });
+      return;
+    }
+
+    // Toggle 20-Reply Refresh Cycle On/Off
+    if (message.type === 'TOGGLE_REFRESH_CYCLE') {
+      await chrome.storage.sync.set({ refreshCycleEnabled: !!message.enabled });
       await persistRuntime();
       sendUpdate();
       respond({ ok: true });
